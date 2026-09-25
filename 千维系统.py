@@ -21,8 +21,6 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "terminal_output" not in st.session_state:
     st.session_state.terminal_output = []
-if "cmd_stage" not in st.session_state:
-    st.session_state.cmd_stage = False
 if "countdown_running" not in st.session_state:
     st.session_state.countdown_running = False
 if "welcome_printed" not in st.session_state:
@@ -39,7 +37,7 @@ def render_terminal():
 render_terminal()
 
 # ========== 密码输入阶段 ==========
-if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.session_state.countdown_running:
+if not st.session_state.logged_in and not st.session_state.countdown_running:
     if st.session_state.count < 10:
         def submit_pwd():
             pwd_raw = st.session_state.pwd_input
@@ -50,7 +48,6 @@ if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.
                 if pws == 54816871:
                     print_term('千维系统已连线，测试版本29743，测试代号卢奇菲罗，请下达指令。')
                     st.session_state.logged_in = True
-                    st.session_state.cmd_stage = True
                 else:
                     st.session_state.count += 1
                     remain = 10 - st.session_state.count
@@ -59,7 +56,6 @@ if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.
                 print_term("密码必须是数字！")
             st.session_state.pwd_input = ""
 
-        # 【重点】提示词直接展示，不再隐藏！
         st.text_input('请输入密码：', key="pwd_input", on_change=submit_pwd)
 
     else:
@@ -75,8 +71,8 @@ if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.
         print_term("系统已关闭。")
         render_terminal()
 
-# ========== 指令交互阶段 ==========
-if st.session_state.cmd_stage and st.session_state.logged_in:
+# ========== 指令交互阶段（移到外面，保证一定会渲染） ==========
+if st.session_state.logged_in:
     def submit_cmd():
         cmd_raw = st.session_state.cmd_input
         if not cmd_raw:
@@ -94,15 +90,13 @@ if st.session_state.cmd_stage and st.session_state.logged_in:
             print_term('指令已接收。目标号码：8764239。监听中……未检测到活跃通讯。该号码最后活跃时间：12月22日 20:47。之后无信号。')
         elif cmd == '结束':
             print_term('感谢使用，欢迎再次使用千维系统。')
-            st.session_state.cmd_stage = False
             st.session_state.logged_in = False
         else:
             print_term('无效指令。')
         st.session_state.cmd_input = ""
 
-        # 【重点】完整长提示词直接显示在输入框上方
-        prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
-        st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
+    prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
+    st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
 
 render_terminal()
 
