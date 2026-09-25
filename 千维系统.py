@@ -28,14 +28,12 @@ if "welcome_printed" not in st.session_state:
 # 机制状态
 if "cmd_use_times" not in st.session_state:
     st.session_state.cmd_use_times = 0
-if "called_8764239" not in st.session_state:
-    st.session_state.called_8764239 = True
 if "martin_warning" not in st.session_state:
     st.session_state.martin_warning = False
 if "system_destroyed" not in st.session_state:
     st.session_state.system_destroyed = False
-if "martin_dialog_appended" not in st.session_state:
-    st.session_state.martin_dialog_appended = False
+if "warning_added" not in st.session_state:
+    st.session_state.warning_added = False # 控制警告只添加一次
 
 def print_term(text):
     st.session_state.terminal_output.append(text)
@@ -75,23 +73,22 @@ if not st.session_state.logged_in and not st.session_state.system_destroyed:
 # ========== 指令交互阶段 ==========
 if st.session_state.logged_in and not st.session_state.system_destroyed:
     if st.session_state.martin_warning:
-        # 警告对话只追加一次，防止刷屏
-        if not st.session_state.martin_dialog_appended:
+        # 只添加一次警告文本，解决刷屏
+        if not st.session_state.warning_added:
             print_term("⚠️ 严重警告！检测反向追踪信号！")
             print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
-            st.session_state.martin_dialog_appended = True
+            st.session_state.warning_added = True
 
-        # 输入框直接放在警告面板，【继续使用】按钮读取输入框
         ans = st.text_input("请输入 是 / 否", key="martin_answer")
-        opt1, opt2 = st.columns(2)
-        with opt1:
+        col1, col2 = st.columns(2)
+        with col1:
             if st.button("立刻停止使用"):
                 print_term("已断开连接。千维系统暂时不可用，本次追踪终止。")
                 st.session_state.logged_in = False
                 st.session_state.martin_warning = False
-                st.session_state.martin_dialog_appended = False
+                st.session_state.warning_added = False
                 st.rerun()
-        with opt2:
+        with col2:
             if st.button("继续使用"):
                 ans_clean = ans.strip()
                 if ans_clean == "是":
@@ -103,13 +100,13 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                     print_term("倒计时：3...")
                     print_term("倒计时：2...")
                     print_term("倒计时：1...")
-                    # 50%概率销毁被外部力量拦截
+                    # 50%概率销毁被拦截
                     intercept_roll = random.randint(1,100)
                     if intercept_roll <= 50:
                         print_term("【错误】销毁指令被外部入侵行为拦截！系统保留，但追踪链路仍存在风险。")
                         st.session_state.logged_in = False
                         st.session_state.martin_warning = False
-                        st.session_state.martin_dialog_appended = False
+                        st.session_state.warning_added = False
                     else:
                         print_term("销毁完成。核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
                         print_term("系统已上传至未知地址，后续接入只会得到空响应。")
@@ -121,7 +118,7 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                     print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
                     st.session_state.logged_in = False
                     st.session_state.martin_warning = False
-                    st.session_state.martin_dialog_appended = False
+                    st.session_state.warning_added = False
                     st.rerun()
 
     else:
@@ -155,9 +152,8 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
 
             roll = random.randint(1,100)
             if roll <= expose_rate:
-                print_term("\n⚠️ 严重警告！检测反向追踪信号！")
                 st.session_state.martin_warning = True
-                st.session_state.martin_dialog_appended = False
+                st.session_state.warning_added = False
 
             st.session_state.cmd_input = ""
             st.rerun()
