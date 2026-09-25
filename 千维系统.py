@@ -28,13 +28,11 @@ if "welcome_printed" not in st.session_state:
     st.session_state.welcome_printed = True
     st.session_state.terminal_output.append('你好，欢迎使用千维系统。')
 
-# 新增机制状态
+# 机制状态
 if "cmd_use_times" not in st.session_state:
-    st.session_state.cmd_use_times = 0  # 指令使用次数，用来算幸运惩罚
+    st.session_state.cmd_use_times = 0  # 指令使用次数，决定暴露概率
 if "called_8764239" not in st.session_state:
-    st.session_state.called_8764239 = False # 是否拨打过8764239
-if "trigger_martin_threshold" not in st.session_state:
-    st.session_state.trigger_martin_threshold = random.randint(1,6) # KP暗骰1D6
+    st.session_state.called_8764239 = True # ✅ 默认已经监听过8764239，马丁追踪风险一直生效
 if "martin_warning" not in st.session_state:
     st.session_state.martin_warning = False # 是否触发马丁警告
 if "system_destroyed" not in st.session_state:
@@ -86,7 +84,7 @@ if not st.session_state.logged_in and not st.session_state.countdown_running and
 
 # ========== 指令交互阶段 ==========
 if st.session_state.logged_in and not st.session_state.system_destroyed:
-    # 如果触发马丁警告，不再接收普通指令，弹出选择分支
+    # 触发马丁警告，进入分支选择
     if st.session_state.martin_warning:
         print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
         opt1, opt2 = st.columns(2)
@@ -94,6 +92,7 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             if st.button("立刻停止使用"):
                 print_term("已断开连接。千维系统暂时不可用，本次追踪终止。")
                 st.session_state.logged_in = False
+                st.session_state.martin_warning = False
                 st.rerun()
         with opt2:
             if st.button("继续使用"):
@@ -109,6 +108,7 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                     else:
                         print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
                         st.session_state.logged_in = False
+                        st.session_state.martin_warning = False
                     st.rerun()
 
     else:
@@ -119,41 +119,21 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             cmd = cmd_raw.strip()
             st.session_state.cmd_use_times += 1
             use_times = st.session_state.cmd_use_times
-            luck_penalty = use_times * (-10)
-            print_term(f"\n===== 第{use_times}次调用系统，幸运检定 惩罚值 {luck_penalty} =====")
+            # 暴露概率：第N次=N*10%，上限50%
+            expose_rate = min(use_times * 10, 50)
+            print_term(f"\n===== 第{use_times}次调用系统，当前暴露概率：{expose_rate}% =====")
 
-            # 幸运检定模拟（简化：50%基础成功率，叠加惩罚）
-            roll = random.randint(1,100)
-            success = roll + luck_penalty >= 50
-
-            # 各个指令逻辑
+            # 指令执行
             if cmd == '电力':
-                if success:
-                    print_term('指令已接收。目标区域：新月街B大道。电力切断中……预计持续时间：15分钟。备用电源已禁用。操作完成。')
-                else:
-                    print_term('【检定失败】系统连接不稳定。电力切断操作部分执行，留下可追踪的访问痕迹。')
+                print_term('指令已接收。目标区域：新月街B大道。电力切断中……预计持续时间：15分钟。备用电源已禁用。操作完成。')
             elif cmd == '水力':
-                if success:
-                    print_term('指令已接收。目标区域：新月街B大道污水处理系统。闸门关闭中……水位下降中……操作完成。建议在45分钟内完成相关操作，之后系统将自动恢复默认设置。')
-                else:
-                    print_term('【检定失败】系统连接不稳定。闸门控制指令延迟，操作留下痕迹。')
+                print_term('指令已接收。目标区域：新月街B大道污水处理系统。闸门关闭中……水位下降中……操作完成。建议在45分钟内完成相关操作，之后系统将自动恢复默认设置。')
             elif cmd == '政府':
-                if success:
-                    print_term('指令已接收。目标系统：卡森德拉警局内部通讯。调取记录中……找到以下关键词：布鲁诺·加利雷、驯鹿酒吧、卢克斯·林奇。部分记录已被删除。无法恢复。')
-                else:
-                    print_term('【检定失败】系统连接不稳定。调取记录行为被日志记录，留下痕迹。')
+                print_term('指令已接收。目标系统：卡森德拉警局内部通讯。调取记录中……找到以下关键词：布鲁诺·加利雷、驯鹿酒吧、卢克斯·林奇。部分记录已被删除。无法恢复。')
             elif cmd == '监控':
-                if success:
-                    print_term('指令已接收。目标区域：星辰医院正门。监控屏蔽中……屏蔽时长：10分钟。操作完成。注意：该区域系统检测到异常访问记录，建议谨慎操作。')
-                else:
-                    print_term('【检定失败】系统连接不稳定。监控屏蔽不完全，摄像头短暂保留访问日志。')
+                print_term('指令已接收。目标区域：星辰医院正门。监控屏蔽中……屏蔽时长：10分钟。操作完成。注意：该区域系统检测到异常访问记录，建议谨慎操作。')
             elif cmd == '通讯':
-                if success:
-                    print_term('指令已接收。目标号码：8764239。监听中……未检测到活跃通讯。该号码最后活跃时间：12月22日 20:47。之后无信号。')
-                    st.session_state.called_8764239 = True #标记拨打过这个号码
-                else:
-                    print_term('【检定失败】系统连接不稳定。监听行为留下痕迹。')
-                    st.session_state.called_8764239 = True
+                print_term('指令已接收。目标号码：8764239。监听中……未检测到活跃通讯。该号码最后活跃时间：12月22日 20:47。之后无信号。')
             elif cmd == '结束':
                 print_term('感谢使用，欢迎再次使用千维系统。')
                 st.session_state.logged_in = False
@@ -163,8 +143,9 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             else:
                 print_term('无效指令。')
 
-            # 判断马丁反追踪触发条件：打过8764239，并且指令次数 >= 暗骰1D6的值
-            if st.session_state.called_8764239 and st.session_state.cmd_use_times >= st.session_state.trigger_martin_threshold:
+            # 暴露判定（默认已经打过8764239，每次都roll）
+            roll = random.randint(1,100)
+            if roll <= expose_rate:
                 print_term("\n⚠️ 严重警告！检测反向追踪信号！马丁·琴正在接入！")
                 st.session_state.martin_warning = True
 
@@ -174,7 +155,7 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
         prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
         st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
 
-# 系统已经被销毁的提示
+# 系统销毁后提示
 if st.session_state.system_destroyed:
     print_term("\n【系统永久关闭】千维测试系统已销毁，无法继续使用。")
 
