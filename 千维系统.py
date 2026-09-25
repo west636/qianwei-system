@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import random
 
 # 页面基础配置
 st.set_page_config(page_title="千维系统", layout="wide")
@@ -14,7 +15,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 初始化会话状态
+# ========== 会话状态初始化 ==========
 if "count" not in st.session_state:
     st.session_state.count = 0
 if "logged_in" not in st.session_state:
@@ -27,6 +28,18 @@ if "welcome_printed" not in st.session_state:
     st.session_state.welcome_printed = True
     st.session_state.terminal_output.append('你好，欢迎使用千维系统。')
 
+# 新增机制状态
+if "cmd_use_times" not in st.session_state:
+    st.session_state.cmd_use_times = 0  # 指令使用次数，用来算幸运惩罚
+if "called_8764239" not in st.session_state:
+    st.session_state.called_8764239 = False # 是否拨打过8764239
+if "trigger_martin_threshold" not in st.session_state:
+    st.session_state.trigger_martin_threshold = random.randint(1,6) # KP暗骰1D6
+if "martin_warning" not in st.session_state:
+    st.session_state.martin_warning = False # 是否触发马丁警告
+if "system_destroyed" not in st.session_state:
+    st.session_state.system_destroyed = False # 是否系统被销毁
+
 def print_term(text):
     st.session_state.terminal_output.append(text)
 
@@ -37,7 +50,7 @@ def render_terminal():
 render_terminal()
 
 # ========== 密码输入阶段 ==========
-if not st.session_state.logged_in and not st.session_state.countdown_running:
+if not st.session_state.logged_in and not st.session_state.countdown_running and not st.session_state.system_destroyed:
     if st.session_state.count < 10:
         def submit_pwd():
             pwd_raw = st.session_state.pwd_input
@@ -71,32 +84,99 @@ if not st.session_state.logged_in and not st.session_state.countdown_running:
         print_term("系统已关闭。")
         render_terminal()
 
-# ========== 指令交互阶段（移到外面，保证一定会渲染） ==========
-if st.session_state.logged_in:
-    def submit_cmd():
-        cmd_raw = st.session_state.cmd_input
-        if not cmd_raw:
-            return
-        cmd = cmd_raw.strip()
-        if cmd == '电力':
-            print_term('指令已接收。目标区域：新月街B大道。电力切断中……预计持续时间：15分钟。备用电源已禁用。操作完成。')
-        elif cmd == '水力':
-            print_term('指令已接收。目标区域：新月街B大道污水处理系统。闸门关闭中……水位下降中……操作完成。建议在45分钟内完成相关操作，之后系统将自动恢复默认设置。')
-        elif cmd == '政府':
-            print_term('指令已接收。目标系统：卡森德拉警局内部通讯。调取记录中……找到以下关键词：布鲁诺·加利雷、驯鹿酒吧、卢克斯·林奇。部分记录已被删除。无法恢复。')
-        elif cmd == '监控':
-            print_term('指令已接收。目标区域：星辰医院正门。监控屏蔽中……屏蔽时长：10分钟。操作完成。注意：该区域系统检测到异常访问记录，建议谨慎操作。')
-        elif cmd == '通讯':
-            print_term('指令已接收。目标号码：8764239。监听中……未检测到活跃通讯。该号码最后活跃时间：12月22日 20:47。之后无信号。')
-        elif cmd == '结束':
-            print_term('感谢使用，欢迎再次使用千维系统。')
-            st.session_state.logged_in = False
-        else:
-            print_term('无效指令。')
-        st.session_state.cmd_input = ""
+# ========== 指令交互阶段 ==========
+if st.session_state.logged_in and not st.session_state.system_destroyed:
+    # 如果触发马丁警告，不再接收普通指令，弹出选择分支
+    if st.session_state.martin_warning:
+        print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
+        opt1, opt2 = st.columns(2)
+        with opt1:
+            if st.button("立刻停止使用"):
+                print_term("已断开连接。千维系统暂时不可用，本次追踪终止。")
+                st.session_state.logged_in = False
+                st.rerun()
+        with opt2:
+            if st.button("继续使用"):
+                print_term('【通讯接入】男性声音："我抓到你了。"')
+                time.sleep(1.2)
+                print_term('【系统提示】切换备用信道，女声：发现系统被修改，是否启动备用计划。')
+                ans = st.text_input("请输入 是 / 否", key="martin_answer")
+                if ans:
+                    if ans.strip() == "是":
+                        print_term("核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
+                        print_term("系统已上传至未知地址，后续拨打号码只会听到忙音。马丁·琴将会展开袭击。")
+                        st.session_state.system_destroyed = True
+                    else:
+                        print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
+                        st.session_state.logged_in = False
+                    st.rerun()
 
-    prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
-    st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
+    else:
+        def submit_cmd():
+            cmd_raw = st.session_state.cmd_input
+            if not cmd_raw:
+                return
+            cmd = cmd_raw.strip()
+            st.session_state.cmd_use_times += 1
+            use_times = st.session_state.cmd_use_times
+            luck_penalty = use_times * (-10)
+            print_term(f"\n===== 第{use_times}次调用系统，幸运检定 惩罚值 {luck_penalty} =====")
+
+            # 幸运检定模拟（简化：50%基础成功率，叠加惩罚）
+            roll = random.randint(1,100)
+            success = roll + luck_penalty >= 50
+
+            # 各个指令逻辑
+            if cmd == '电力':
+                if success:
+                    print_term('指令已接收。目标区域：新月街B大道。电力切断中……预计持续时间：15分钟。备用电源已禁用。操作完成。')
+                else:
+                    print_term('【检定失败】系统连接不稳定。电力切断操作部分执行，留下可追踪的访问痕迹。')
+            elif cmd == '水力':
+                if success:
+                    print_term('指令已接收。目标区域：新月街B大道污水处理系统。闸门关闭中……水位下降中……操作完成。建议在45分钟内完成相关操作，之后系统将自动恢复默认设置。')
+                else:
+                    print_term('【检定失败】系统连接不稳定。闸门控制指令延迟，操作留下痕迹。')
+            elif cmd == '政府':
+                if success:
+                    print_term('指令已接收。目标系统：卡森德拉警局内部通讯。调取记录中……找到以下关键词：布鲁诺·加利雷、驯鹿酒吧、卢克斯·林奇。部分记录已被删除。无法恢复。')
+                else:
+                    print_term('【检定失败】系统连接不稳定。调取记录行为被日志记录，留下痕迹。')
+            elif cmd == '监控':
+                if success:
+                    print_term('指令已接收。目标区域：星辰医院正门。监控屏蔽中……屏蔽时长：10分钟。操作完成。注意：该区域系统检测到异常访问记录，建议谨慎操作。')
+                else:
+                    print_term('【检定失败】系统连接不稳定。监控屏蔽不完全，摄像头短暂保留访问日志。')
+            elif cmd == '通讯':
+                if success:
+                    print_term('指令已接收。目标号码：8764239。监听中……未检测到活跃通讯。该号码最后活跃时间：12月22日 20:47。之后无信号。')
+                    st.session_state.called_8764239 = True #标记拨打过这个号码
+                else:
+                    print_term('【检定失败】系统连接不稳定。监听行为留下痕迹。')
+                    st.session_state.called_8764239 = True
+            elif cmd == '结束':
+                print_term('感谢使用，欢迎再次使用千维系统。')
+                st.session_state.logged_in = False
+                st.session_state.cmd_input = ""
+                st.rerun()
+                return
+            else:
+                print_term('无效指令。')
+
+            # 判断马丁反追踪触发条件：打过8764239，并且指令次数 >= 暗骰1D6的值
+            if st.session_state.called_8764239 and st.session_state.cmd_use_times >= st.session_state.trigger_martin_threshold:
+                print_term("\n⚠️ 严重警告！检测反向追踪信号！马丁·琴正在接入！")
+                st.session_state.martin_warning = True
+
+            st.session_state.cmd_input = ""
+            st.rerun()
+
+        prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
+        st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
+
+# 系统已经被销毁的提示
+if st.session_state.system_destroyed:
+    print_term("\n【系统永久关闭】千维测试系统已销毁，无法继续使用。")
 
 render_terminal()
 
