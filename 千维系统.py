@@ -1,5 +1,4 @@
 import streamlit as st
-import time
 import random
 
 # 页面基础配置
@@ -30,13 +29,15 @@ if "welcome_printed" not in st.session_state:
 
 # 机制状态
 if "cmd_use_times" not in st.session_state:
-    st.session_state.cmd_use_times = 0  # 指令使用次数，决定暴露概率
+    st.session_state.cmd_use_times = 0
 if "called_8764239" not in st.session_state:
-    st.session_state.called_8764239 = True # 默认已经监听过8764239，马丁追踪风险一直生效
+    st.session_state.called_8764239 = True
 if "martin_warning" not in st.session_state:
-    st.session_state.martin_warning = False # 是否触发马丁警告
+    st.session_state.martin_warning = False
 if "system_destroyed" not in st.session_state:
-    st.session_state.system_destroyed = False # 是否系统被销毁
+    st.session_state.system_destroyed = False
+if "martin_dialog_appended" not in st.session_state:
+    st.session_state.martin_dialog_appended = False # 防止马丁文本重复刷屏
 
 def print_term(text):
     st.session_state.terminal_output.append(text)
@@ -73,45 +74,59 @@ if not st.session_state.logged_in and not st.session_state.countdown_running and
         st.session_state.countdown_running = True
         print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
         render_terminal()
-        time_left = 10
-        while time_left > 0:
-            print_term(f'剩余 {time_left} 秒。')
-            render_terminal()
-            time.sleep(1)
-            time_left -= 1
         print_term("系统已关闭。")
         render_terminal()
 
 # ========== 指令交互阶段 ==========
 if st.session_state.logged_in and not st.session_state.system_destroyed:
-    # 触发马丁警告，进入分支选择
     if st.session_state.martin_warning:
-        print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
+        # 只追加一次警告对话，防止重复刷屏
+        if not st.session_state.martin_dialog_appended:
+            print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
+            st.session_state.martin_dialog_appended = True
+
         opt1, opt2 = st.columns(2)
         with opt1:
             if st.button("立刻停止使用"):
                 print_term("已断开连接。千维系统暂时不可用，本次追踪终止。")
                 st.session_state.logged_in = False
                 st.session_state.martin_warning = False
+                st.session_state.martin_dialog_appended = False
                 st.rerun()
         with opt2:
             if st.button("继续使用"):
                 print_term('【通讯接入】男性声音："我抓到你了。"')
-                time.sleep(1.2)
                 print_term('【系统提示】切换备用信道，女声：发现系统被修改，是否启动备用计划。')
-                ans = st.text_input("请输入 是 / 否", key="martin_answer")
-                if ans:
-                    ans_clean = ans.strip()
-                    if ans_clean == "是":
-                        print_term("核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
-                        print_term("系统已上传至未知地址，后续拨打号码只会听到忙音。马丁·琴将会展开袭击。")
-                        st.session_state.system_destroyed = True
-                        st.rerun()
-                    elif ans_clean == "否":
-                        print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
-                        st.session_state.logged_in = False
-                        st.session_state.martin_warning = False
-                        st.rerun()
+                st.rerun()
+
+        ans = st.text_input("请输入 是 / 否", key="martin_answer")
+        if ans:
+            ans_clean = ans.strip()
+            if ans_clean == "是":
+                print_term("启动备用计划，开始销毁全部测试系统数据。")
+                print_term("倒计时：5...")
+                print_term("倒计时：4...")
+                print_term("倒计时：3...")
+                print_term("倒计时：2...")
+                print_term("倒计时：1...")
+                # 50%概率销毁被外部力量拦截
+                intercept_roll = random.randint(1,100)
+                if intercept_roll <= 50:
+                    print_term("【错误】销毁指令被外部入侵行为拦截！系统保留，但追踪链路仍存在风险。")
+                    st.session_state.logged_in = False
+                    st.session_state.martin_warning = False
+                    st.session_state.martin_dialog_appended = False
+                else:
+                    print_term("销毁完成。核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
+                    print_term("系统已上传至未知地址，后续接入只会得到空响应。")
+                    st.session_state.system_destroyed = True
+                st.rerun()
+            elif ans_clean == "否":
+                print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
+                st.session_state.logged_in = False
+                st.session_state.martin_warning = False
+                st.session_state.martin_dialog_appended = False
+                st.rerun()
 
     else:
         def submit_cmd():
@@ -121,10 +136,8 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             cmd = cmd_raw.strip()
             st.session_state.cmd_use_times += 1
             use_times = st.session_state.cmd_use_times
-            # 暴露概率：第N次=N*10%，上限50%，不再打印概率提示
             expose_rate = min(use_times * 10, 50)
 
-            # 指令执行
             if cmd == '电力':
                 print_term('指令已接收。目标区域：新月街B大道。电力切断中……预计持续时间：15分钟。备用电源已禁用。操作完成。')
             elif cmd == '水力':
@@ -144,11 +157,11 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             else:
                 print_term('无效指令。')
 
-            # 暴露判定（默认已经打过8764239，每次都roll）
             roll = random.randint(1,100)
             if roll <= expose_rate:
-                print_term("\n⚠️ 严重警告！检测反向追踪信号！马丁·琴正在接入！")
+                print_term("\n⚠️ 严重警告！检测反向追踪信号！")
                 st.session_state.martin_warning = True
+                st.session_state.martin_dialog_appended = False
 
             st.session_state.cmd_input = ""
             st.rerun()
