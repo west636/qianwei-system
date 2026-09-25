@@ -4,7 +4,7 @@ import time
 # 页面基础配置
 st.set_page_config(page_title="千维系统", layout="wide")
 
-# 终端样式 CSS，黑底绿字控制台风格
+# 终端黑底绿字样式
 st.markdown("""
 <style>
 .main {background-color:#000000;}
@@ -29,7 +29,6 @@ if "welcome_printed" not in st.session_state:
     st.session_state.welcome_printed = True
     st.session_state.terminal_output.append('你好，欢迎使用千维系统。')
 
-# 追加文本到终端日志
 def print_term(text):
     st.session_state.terminal_output.append(text)
 
@@ -42,7 +41,6 @@ render_terminal()
 # ========== 密码输入阶段 ==========
 if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.session_state.countdown_running:
     if st.session_state.count < 10:
-        # 密码提示：完全沿用你原文：请输入密码：
         def submit_pwd():
             pwd_raw = st.session_state.pwd_input
             if not pwd_raw:
@@ -59,13 +57,12 @@ if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.
                     print_term(f'密码错误，你还有 {remain} 次机会。')
             except ValueError:
                 print_term("密码必须是数字！")
-            # 清空输入框防止重复触发
             st.session_state.pwd_input = ""
 
-        st.text_input('请输入密码：', key="pwd_input", on_change=submit_pwd, label_visibility="collapsed")
+        # 【重点】提示词直接展示，不再隐藏！
+        st.text_input('请输入密码：', key="pwd_input", on_change=submit_pwd)
 
     else:
-        # 10次密码错误，启动倒计时
         st.session_state.countdown_running = True
         print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
         render_terminal()
@@ -103,13 +100,13 @@ if st.session_state.cmd_stage and st.session_state.logged_in:
             print_term('无效指令。')
         st.session_state.cmd_input = ""
 
-    # ✅ 这里提示词完全复制你原始代码的提示文本
-    prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
-    st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd, label_visibility="collapsed")
+        # 【重点】完整长提示词直接显示在输入框上方
+        prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
+        st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
 
 render_terminal()
 
-# 重置按钮，方便测试
+# 重置按钮
 if st.button("🔄 重置系统（清空记录，重新开始）"):
     for key in st.session_state.keys():
         del st.session_state[key]
