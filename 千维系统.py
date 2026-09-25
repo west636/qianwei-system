@@ -35,7 +35,7 @@ if "system_destroyed" not in st.session_state:
 if "warning_added" not in st.session_state:
     st.session_state.warning_added = False
 if "enter_confirm" not in st.session_state:
-    st.session_state.enter_confirm = False # 标记是否点击了继续使用，用来显示输入框
+    st.session_state.enter_confirm = False
 
 def print_term(text):
     st.session_state.terminal_output.append(text)
@@ -75,14 +75,12 @@ if not st.session_state.logged_in and not st.session_state.system_destroyed:
 # ========== 指令交互阶段 ==========
 if st.session_state.logged_in and not st.session_state.system_destroyed:
     if st.session_state.martin_warning:
-        # 警告文字只追加一次
         if not st.session_state.warning_added:
             print_term("⚠️ 严重警告！检测反向追踪信号！")
             print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
             st.session_state.warning_added = True
 
         if not st.session_state.enter_confirm:
-            # 第一阶段：只显示两个按钮，没有输入框
             col1, col2 = st.columns(2)
             with col1:
                 btn_stop = st.button("立刻停止使用")
@@ -100,7 +98,6 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                 st.session_state.enter_confirm = True
                 st.rerun()
         else:
-            # 点完继续使用之后，弹出输入框+确认按钮（表单防止输入bug）
             with st.form("confirm_form"):
                 ans = st.text_input("是否启动备用计划？请输入 是 / 否", key="ans_input")
                 btn_ok = st.form_submit_button("确认")
@@ -108,16 +105,16 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             if btn_ok:
                 ans_clean = ans.strip()
                 if ans_clean == "是":
-                    print_term('【通讯接入】男性声音："我抓到你了。"')
-                    print_term('【系统提示】切换备用信道，女声：发现系统被修改，启动备用计划。')
+                    print_term('系统传出一阵男声，很明显不是系统自带的：“我抓到你了。”')
+                    print_term('系统提示：发现系统被修改，是否启动备用计划。')
                     print_term("启动备用计划，开始销毁全部测试系统数据。")
                     print_term("倒计时：5...")
                     print_term("倒计时：4...")
                     print_term("倒计时：3...")
                     print_term("倒计时：2...")
                     print_term("倒计时：1...")
-                    # 50%概率销毁被外部入侵拦截
-                    intercept_roll = random.randint(1,100)
+
+                    intercept_roll = random.randint(1, 100)
                     if intercept_roll <= 50:
                         print_term("【错误】销毁指令被外部入侵行为拦截！系统保留，但追踪链路仍存在风险。")
                         st.session_state.logged_in = False
@@ -130,8 +127,8 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                         st.session_state.system_destroyed = True
                     st.rerun()
                 elif ans_clean == "否":
-                    print_term('【通讯接入】男性声音："我抓到你了。"')
-                    print_term('【系统提示】切换备用信道，女声：发现系统被修改，放弃启动备用计划。')
+                    print_term('系统传出一阵男声，很明显不是系统自带的：“我抓到你了。”')
+                    print_term('系统提示：发现系统被修改，放弃启动备用计划。')
                     print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
                     st.session_state.logged_in = False
                     st.session_state.martin_warning = False
@@ -168,7 +165,7 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             else:
                 print_term('无效指令。')
 
-            roll = random.randint(1,100)
+            roll = random.randint(1, 100)
             if roll <= expose_rate:
                 st.session_state.martin_warning = True
                 st.session_state.warning_added = False
@@ -180,13 +177,11 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
         prompt_text = '可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：'
         st.text_input(prompt_text, key="cmd_input", on_change=submit_cmd)
 
-# 系统销毁后提示
 if st.session_state.system_destroyed:
     print_term("\n【系统永久关闭】千维测试系统已销毁，无法继续使用。")
 
 render_terminal()
 
-# 重置按钮
 if st.button("🔄 重置系统（清空记录，重新开始）"):
     for key in st.session_state.keys():
         del st.session_state[key]
