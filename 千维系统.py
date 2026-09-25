@@ -70,6 +70,16 @@ if not st.session_state.logged_in and not st.session_state.system_destroyed:
 
     else:
         print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
+        print_term("倒计时：10...")
+        print_term("倒计时：9...")
+        print_term("倒计时：8...")
+        print_term("倒计时：7...")
+        print_term("倒计时：6...")
+        print_term("倒计时：5...")
+        print_term("倒计时：4...")
+        print_term("倒计时：3...")
+        print_term("倒计时：2...")
+        print_term("倒计时：1...")
         print_term("系统已关闭。")
 
 # ========== 指令交互阶段 ==========
