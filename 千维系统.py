@@ -32,7 +32,7 @@ if "welcome_printed" not in st.session_state:
 if "cmd_use_times" not in st.session_state:
     st.session_state.cmd_use_times = 0  # 指令使用次数，决定暴露概率
 if "called_8764239" not in st.session_state:
-    st.session_state.called_8764239 = True # ✅ 默认已经监听过8764239，马丁追踪风险一直生效
+    st.session_state.called_8764239 = True # 默认已经监听过8764239，马丁追踪风险一直生效
 if "martin_warning" not in st.session_state:
     st.session_state.martin_warning = False # 是否触发马丁警告
 if "system_destroyed" not in st.session_state:
@@ -119,9 +119,8 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             cmd = cmd_raw.strip()
             st.session_state.cmd_use_times += 1
             use_times = st.session_state.cmd_use_times
-            # 暴露概率：第N次=N*10%，上限50%
+            # 暴露概率：第N次=N*10%，上限50%，不再打印概率提示
             expose_rate = min(use_times * 10, 50)
-            print_term(f"\n===== 第{use_times}次调用系统，当前暴露概率：{expose_rate}% =====")
 
             # 指令执行
             if cmd == '电力':
