@@ -21,8 +21,6 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "terminal_output" not in st.session_state:
     st.session_state.terminal_output = []
-if "countdown_running" not in st.session_state:
-    st.session_state.countdown_running = False
 if "welcome_printed" not in st.session_state:
     st.session_state.welcome_printed = True
     st.session_state.terminal_output.append('你好，欢迎使用千维系统。')
@@ -37,7 +35,7 @@ if "martin_warning" not in st.session_state:
 if "system_destroyed" not in st.session_state:
     st.session_state.system_destroyed = False
 if "martin_dialog_appended" not in st.session_state:
-    st.session_state.martin_dialog_appended = False # 防止马丁文本重复刷屏
+    st.session_state.martin_dialog_appended = False
 
 def print_term(text):
     st.session_state.terminal_output.append(text)
@@ -49,7 +47,7 @@ def render_terminal():
 render_terminal()
 
 # ========== 密码输入阶段 ==========
-if not st.session_state.logged_in and not st.session_state.countdown_running and not st.session_state.system_destroyed:
+if not st.session_state.logged_in and not st.session_state.system_destroyed:
     if st.session_state.count < 10:
         def submit_pwd():
             pwd_raw = st.session_state.pwd_input
@@ -71,20 +69,20 @@ if not st.session_state.logged_in and not st.session_state.countdown_running and
         st.text_input('请输入密码：', key="pwd_input", on_change=submit_pwd)
 
     else:
-        st.session_state.countdown_running = True
         print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
-        render_terminal()
         print_term("系统已关闭。")
-        render_terminal()
 
 # ========== 指令交互阶段 ==========
 if st.session_state.logged_in and not st.session_state.system_destroyed:
     if st.session_state.martin_warning:
-        # 只追加一次警告对话，防止重复刷屏
+        # 警告对话只追加一次，防止刷屏
         if not st.session_state.martin_dialog_appended:
+            print_term("⚠️ 严重警告！检测反向追踪信号！")
             print_term("⚠️ 警告：正在被人接入！检测到外部反向追踪，是否继续使用？")
             st.session_state.martin_dialog_appended = True
 
+        # 输入框直接放在警告面板，【继续使用】按钮读取输入框
+        ans = st.text_input("请输入 是 / 否", key="martin_answer")
         opt1, opt2 = st.columns(2)
         with opt1:
             if st.button("立刻停止使用"):
@@ -95,38 +93,36 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                 st.rerun()
         with opt2:
             if st.button("继续使用"):
-                print_term('【通讯接入】男性声音："我抓到你了。"')
-                print_term('【系统提示】切换备用信道，女声：发现系统被修改，是否启动备用计划。')
-                st.rerun()
-
-        ans = st.text_input("请输入 是 / 否", key="martin_answer")
-        if ans:
-            ans_clean = ans.strip()
-            if ans_clean == "是":
-                print_term("启动备用计划，开始销毁全部测试系统数据。")
-                print_term("倒计时：5...")
-                print_term("倒计时：4...")
-                print_term("倒计时：3...")
-                print_term("倒计时：2...")
-                print_term("倒计时：1...")
-                # 50%概率销毁被外部力量拦截
-                intercept_roll = random.randint(1,100)
-                if intercept_roll <= 50:
-                    print_term("【错误】销毁指令被外部入侵行为拦截！系统保留，但追踪链路仍存在风险。")
+                ans_clean = ans.strip()
+                if ans_clean == "是":
+                    print_term('【通讯接入】男性声音："我抓到你了。"')
+                    print_term('【系统提示】切换备用信道，女声：发现系统被修改，启动备用计划。')
+                    print_term("启动备用计划，开始销毁全部测试系统数据。")
+                    print_term("倒计时：5...")
+                    print_term("倒计时：4...")
+                    print_term("倒计时：3...")
+                    print_term("倒计时：2...")
+                    print_term("倒计时：1...")
+                    # 50%概率销毁被外部力量拦截
+                    intercept_roll = random.randint(1,100)
+                    if intercept_roll <= 50:
+                        print_term("【错误】销毁指令被外部入侵行为拦截！系统保留，但追踪链路仍存在风险。")
+                        st.session_state.logged_in = False
+                        st.session_state.martin_warning = False
+                        st.session_state.martin_dialog_appended = False
+                    else:
+                        print_term("销毁完成。核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
+                        print_term("系统已上传至未知地址，后续接入只会得到空响应。")
+                        st.session_state.system_destroyed = True
+                    st.rerun()
+                elif ans_clean == "否":
+                    print_term('【通讯接入】男性声音："我抓到你了。"')
+                    print_term('【系统提示】切换备用信道，女声：发现系统被修改，放弃启动备用计划。')
+                    print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
                     st.session_state.logged_in = False
                     st.session_state.martin_warning = False
                     st.session_state.martin_dialog_appended = False
-                else:
-                    print_term("销毁完成。核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
-                    print_term("系统已上传至未知地址，后续接入只会得到空响应。")
-                    st.session_state.system_destroyed = True
-                st.rerun()
-            elif ans_clean == "否":
-                print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
-                st.session_state.logged_in = False
-                st.session_state.martin_warning = False
-                st.session_state.martin_dialog_appended = False
-                st.rerun()
+                    st.rerun()
 
     else:
         def submit_cmd():
