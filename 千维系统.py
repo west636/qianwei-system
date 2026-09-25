@@ -4,7 +4,7 @@ import time
 # 页面基础配置
 st.set_page_config(page_title="千维系统", layout="wide")
 
-# CSS 模拟终端绿色文字，黑色背景
+# CSS 终端样式
 st.markdown("""
 <style>
 .main {background-color:#000000;}
@@ -14,7 +14,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 初始化会话状态，保存所有变量，页面刷新不会丢失状态
+# 初始化会话状态
 if "count" not in st.session_state:
     st.session_state.count = 0
 if "logged_in" not in st.session_state:
@@ -23,6 +23,8 @@ if "terminal_output" not in st.session_state:
     st.session_state.terminal_output = []
 if "cmd_stage" not in st.session_state:
     st.session_state.cmd_stage = False
+if "countdown_running" not in st.session_state:
+    st.session_state.countdown_running = False
 
 # 追加文本到终端
 def print_term(text):
@@ -33,13 +35,17 @@ terminal = st.empty()
 def render_terminal():
     terminal.code("\n".join(st.session_state.terminal_output), language="text")
 
-print_term('你好，欢迎使用千维系统。')
+# 只在第一次打开页面打印欢迎语
+if "welcome_printed" not in st.session_state:
+    print_term('你好，欢迎使用千维系统。')
+    st.session_state.welcome_printed = True
+
 render_terminal()
 
-# 密码尝试阶段
-if not st.session_state.logged_in and not st.session_state.cmd_stage:
+# ========== 密码输入阶段 ==========
+if not st.session_state.logged_in and not st.session_state.cmd_stage and not st.session_state.countdown_running:
     if st.session_state.count < 10:
-        pwd_input = st.text_input('请输入密码：', label_visibility="collapsed")
+        pwd_input = st.text_input('请输入密码：', label_visibility="collapsed", key="pwd_input")
         if pwd_input:
             try:
                 pws = int(pwd_input)
@@ -57,7 +63,8 @@ if not st.session_state.logged_in and not st.session_state.cmd_stage:
                 print_term("密码必须是数字！")
                 st.rerun()
     else:
-        # 密码尝试用尽
+        # 10次全部输错，启动倒计时
+        st.session_state.countdown_running = True
         print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
         render_terminal()
         time_left = 10
@@ -69,9 +76,9 @@ if not st.session_state.logged_in and not st.session_state.cmd_stage:
         print_term("系统已关闭。")
         render_terminal()
 
-# 指令交互阶段
+# ========== 指令交互阶段 ==========
 if st.session_state.cmd_stage and st.session_state.logged_in:
-    cmd_input = st.text_input('可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：', label_visibility="collapsed")
+    cmd_input = st.text_input('可进行电力，水力，政府警戒，监控系统，通讯系统（请输入电力/水力/政府/监控/通讯），或输入“结束”以结束操作：', label_visibility="collapsed", key="cmd_input")
     if cmd_input:
         cmd = cmd_input.strip()
         if cmd == '电力':
@@ -93,3 +100,9 @@ if st.session_state.cmd_stage and st.session_state.logged_in:
         st.rerun()
 
 render_terminal()
+
+# 增加重置按钮，方便测试
+if st.button("🔄 重置系统（清空记录，重新开始）"):
+    for key in st.session_state.keys():
+        del st.session_state[key]
+    st.rerun()
