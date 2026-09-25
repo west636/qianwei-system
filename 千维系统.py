@@ -1,5 +1,6 @@
 import streamlit as st
 import random
+import time
 
 # 页面基础配置
 st.set_page_config(page_title="千维系统", layout="wide")
@@ -36,6 +37,8 @@ if "warning_added" not in st.session_state:
     st.session_state.warning_added = False
 if "enter_confirm" not in st.session_state:
     st.session_state.enter_confirm = False
+if "pw_countdown_started" not in st.session_state:
+    st.session_state.pw_countdown_started = False # 标记密码失败倒计时是否已经启动
 
 def print_term(text):
     st.session_state.terminal_output.append(text)
@@ -69,18 +72,19 @@ if not st.session_state.logged_in and not st.session_state.system_destroyed:
         st.text_input('请输入密码：', key="pwd_input", on_change=submit_pwd)
 
     else:
-        print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
-        print_term("倒计时：10...")
-        print_term("倒计时：9...")
-        print_term("倒计时：8...")
-        print_term("倒计时：7...")
-        print_term("倒计时：6...")
-        print_term("倒计时：5...")
-        print_term("倒计时：4...")
-        print_term("倒计时：3...")
-        print_term("倒计时：2...")
-        print_term("倒计时：1...")
-        print_term("系统已关闭。")
+        # 密码机会耗尽，启动带1秒间隔的倒计时
+        if not st.session_state.pw_countdown_started:
+            print_term('警告：检测到外部访问尝试。来源：未知。建议终止当前操作。系统将在10秒后关闭。')
+            st.session_state.pw_countdown_started = True
+            render_terminal()
+            # 10秒倒计时，每秒刷新
+            for i in range(10, 0, -1):
+                time.sleep(1)
+                print_term(f"倒计时：{i}...")
+                render_terminal()
+            time.sleep(1)
+            print_term("系统已关闭。")
+            render_terminal()
 
 # ========== 指令交互阶段 ==========
 if st.session_state.logged_in and not st.session_state.system_destroyed:
@@ -118,11 +122,12 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                 ans_clean = ans.strip()
                 if ans_clean == "是":
                     print_term("启动备用计划，开始销毁全部测试系统数据。")
-                    print_term("倒计时：5...")
-                    print_term("倒计时：4...")
-                    print_term("倒计时：3...")
-                    print_term("倒计时：2...")
-                    print_term("倒计时：1...")
+                    render_terminal()
+                    # 销毁倒计时，每秒一行
+                    for i in range(5, 0, -1):
+                        time.sleep(1)
+                        print_term(f"倒计时：{i}...")
+                        render_terminal()
 
                     intercept_roll = random.randint(1, 100)
                     if intercept_roll <= 50:
