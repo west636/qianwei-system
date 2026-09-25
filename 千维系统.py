@@ -195,7 +195,4 @@ if st.session_state.system_destroyed:
 
 render_terminal()
 
-if st.button("🔄 重置系统（清空记录，重新开始）"):
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.rerun()
+
