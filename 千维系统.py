@@ -95,6 +95,8 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                 st.rerun()
 
             if btn_continue:
+                print_term('系统传出一阵男声，很明显不是系统自带的：“我抓到你了。”')
+                print_term('系统提示：发现系统被修改，是否启动备用计划。')
                 st.session_state.enter_confirm = True
                 st.rerun()
         else:
@@ -105,8 +107,6 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
             if btn_ok:
                 ans_clean = ans.strip()
                 if ans_clean == "是":
-                    print_term('系统传出一阵男声，很明显不是系统自带的：“我抓到你了。”')
-                    print_term('系统提示：发现系统被修改，是否启动备用计划。')
                     print_term("启动备用计划，开始销毁全部测试系统数据。")
                     print_term("倒计时：5...")
                     print_term("倒计时：4...")
@@ -127,9 +127,7 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                         st.session_state.system_destroyed = True
                     st.rerun()
                 elif ans_clean == "否":
-                    print_term('系统传出一阵男声，很明显不是系统自带的：“我抓到你了。”')
-                    print_term('系统提示：发现系统被修改，放弃启动备用计划。')
-                    print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
+                    print_term("放弃启动备用计划。连接紧急切断，追踪链路中断。")
                     st.session_state.logged_in = False
                     st.session_state.martin_warning = False
                     st.session_state.warning_added = False
