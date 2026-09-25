@@ -101,15 +101,17 @@ if st.session_state.logged_in and not st.session_state.system_destroyed:
                 print_term('【系统提示】切换备用信道，女声：发现系统被修改，是否启动备用计划。')
                 ans = st.text_input("请输入 是 / 否", key="martin_answer")
                 if ans:
-                    if ans.strip() == "是":
+                    ans_clean = ans.strip()
+                    if ans_clean == "是":
                         print_term("核心系统正在上传，删除测试系统28743，启动测试系统28744，千维系统正在关闭。")
                         print_term("系统已上传至未知地址，后续拨打号码只会听到忙音。马丁·琴将会展开袭击。")
                         st.session_state.system_destroyed = True
-                    else:
+                        st.rerun()
+                    elif ans_clean == "否":
                         print_term("拒绝启用备用计划。连接紧急切断，追踪链路中断。")
                         st.session_state.logged_in = False
                         st.session_state.martin_warning = False
-                    st.rerun()
+                        st.rerun()
 
     else:
         def submit_cmd():
